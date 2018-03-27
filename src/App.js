@@ -1,7 +1,14 @@
 import React, { Component } from 'react';
 import {Grid, Row, FormGroup} from 'react-bootstrap';
-import list from './list'
-import './App.css';
+// import list from './list'
+
+const DEFAULT_QUERY = "react";
+const PATH_BASE     = "https://hn.algolia.com/api/v1";
+const PATH_SEARCH   = "/search";
+const PARAM_SEARCH  = "query=";
+
+const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`
+console.log(url)
 
 function isSearched(searchTerm){
   return function(item) {
@@ -15,17 +22,36 @@ class App extends Component {
     super(props);
     
     this.state = {
-      list,
-      searchTerm: ''
+      result: null,
+      searchTerm: DEFAULT_QUERY
     }
 
-    this.removeItem = this.removeItem.bind(this);
-    this.searchValue = this.searchValue.bind(this);
+    this.removeItem      = this.removeItem.bind(this);
+    this.searchValue     = this.searchValue.bind(this);
+    this.fetchTopStories = this.fetchTopStories.bind(this);
+    this.setTopStories   = this.setTopStories.bind(this);
+  }
+
+  setTopStories(result) {
+    this.setState({result: result})
+  }
+
+  fetchTopStories(searchTerm) {
+    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`)
+    .then(response => response.json())
+    .then(result => this.setTopStories(result))
+    .catch(e => e);
+  }
+
+  componentDidMount() {
+    this.fetchTopStories(this.state.searchTerm);
   }
 
   removeItem(id) {
-    const updatedList = this.state.list.filter(item => item.objectId !== id);
-    this.setState({list: updatedList});
+    const {result} = this.state;
+    const updatedList = result.hits.filter(item => item.objectId !== id);
+    // this.setState({ result: Object.assign({}, result, {hits: updatedList}) });
+    this.setState({ result: {...result, hits: updatedList} });
   }
 
   searchValue(event) {
@@ -34,7 +60,8 @@ class App extends Component {
 
   render() {
     
-    const { list, searchTerm } = this.state;
+    const { result, searchTerm } = this.state;
+    if(!result) { return null; }
 
     return (
       <div className="App">
@@ -50,7 +77,7 @@ class App extends Component {
       </Grid>
         
         <Table
-          list={list}
+          list={result.hits}
           searchTerm={searchTerm}
           removeItem={this.removeItem}
         />
@@ -89,18 +116,20 @@ class Table extends Component {
   render(){
     const { list, searchTerm, removeItem } = this.props;
     return(
-      <div>
+      <div className='col-sm-10 col-sm-offset-1'>
         {
-          list.filter(isSearched(searchTerm)).map(item =>
+          list.filter(isSearched(searchTerm)).map((item, key) =>
 
-            <div key={item.objectId}>
-              <h1><a href={item.url}>{item.title}</a> by {item.author}</h1>
-              <h4>{item.comments} Comments | {item.points} Points</h4>
-              <Button
-                type="button"
-                onClick={ ()=>removeItem(item.objectId) }>
-                - Remove me -
-              </Button>
+            <div key={key}>
+              <h1><a href={item.url}>{item.title}</a></h1>
+              <h4>By {item.author} - {item.comments} Comments | {item.points} Points 
+                <Button
+                  type="button"
+                  className='btn btn-danger'
+                  onClick={ ()=>removeItem(item.objectId) }>
+                  - Remove me -
+                </Button>
+              </h4> <hr />
             </div>
           )
         }
@@ -120,8 +149,9 @@ class Table extends Component {
 //   }
 // }
 
-const Button = ({onClick, children}) =>
+const Button = ({onClick, children, className=''}) =>
   <button
+    className={className}
     onClick={onClick}>
     {children}
   </button>

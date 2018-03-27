@@ -17,3 +17,6 @@ body {
   height: 80px;
   width: 200px;
 }
+.btn-danger {
+  margin-left: 5px;
+}
