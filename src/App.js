@@ -8,11 +8,11 @@ const PATH_SEARCH   = "/search";
 const PARAM_SEARCH  = "query=";
 
 const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`
-console.log(url)
+// console.log(url)
 
 function isSearched(searchTerm){
   return function(item) {
-    return !searchTerm || item.title.includes(searchTerm);
+    return !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
   }
 }
 
