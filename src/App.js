@@ -7,9 +7,6 @@ const PATH_BASE     = "https://hn.algolia.com/api/v1";
 const PATH_SEARCH   = "/search";
 const PARAM_SEARCH  = "query=";
 
-const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${DEFAULT_QUERY}`
-// console.log(url)
-
 function isSearched(searchTerm){
   return function(item) {
     return !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -30,6 +27,7 @@ class App extends Component {
     this.searchValue     = this.searchValue.bind(this);
     this.fetchTopStories = this.fetchTopStories.bind(this);
     this.setTopStories   = this.setTopStories.bind(this);
+    this.onSubmit   = this.onSubmit.bind(this);
   }
 
   setTopStories(result) {
@@ -47,10 +45,14 @@ class App extends Component {
     this.fetchTopStories(this.state.searchTerm);
   }
 
+  onSubmit(event) {
+    this.fetchTopStories(this.state.searchTerm);
+    event.preventDefault();
+  }
+
   removeItem(id) {
     const {result} = this.state;
     const updatedList = result.hits.filter(item => item.objectId !== id);
-    // this.setState({ result: Object.assign({}, result, {hits: updatedList}) });
     this.setState({ result: {...result, hits: updatedList} });
   }
 
@@ -61,7 +63,7 @@ class App extends Component {
   render() {
     
     const { result, searchTerm } = this.state;
-    if(!result) { return null; }
+    
 
     return (
       <div className="App">
@@ -70,17 +72,20 @@ class App extends Component {
           <div className="jumbotron">
             <Search
               onChange={this.searchValue}
+              onSubmit={this.onSubmit}
               value={searchTerm}> Search here
             </Search>
           </div>
         </Row>
       </Grid>
-        
-        <Table
-          list={result.hits}
-          searchTerm={searchTerm}
-          removeItem={this.removeItem}
-        />
+        {
+          result &&
+            <Table
+              list={result.hits}
+              searchTerm={searchTerm}
+              removeItem={this.removeItem}
+            />
+        }
 
       </div>
     );
@@ -89,9 +94,9 @@ class App extends Component {
 
 class Search extends Component {
   render(){
-    const { onChange, value, children } = this.props;
+    const { onChange, value, children, onSubmit } = this.props;
     return(
-      <form>
+      <form onSubmit={onSubmit}>
         <FormGroup>
           <h1>{children}</h1>
           <hr style={{border: '2px solid black', width: '100px'}} />
@@ -115,19 +120,21 @@ class Search extends Component {
 class Table extends Component {
   render(){
     const { list, searchTerm, removeItem } = this.props;
+
+    
     return(
       <div className='col-sm-10 col-sm-offset-1'>
         {
-          list.filter(isSearched(searchTerm)).map((item, key) =>
-
-            <div key={key}>
+          list.filter(isSearched(searchTerm)).map(item =>
+            
+            <div key={item.objectID}>
               <h1><a href={item.url}>{item.title}</a></h1>
               <h4>By {item.author} - {item.comments} Comments | {item.points} Points 
                 <Button
                   type="button"
-                  className='btn btn-danger'
-                  onClick={ ()=>removeItem(item.objectId) }>
-                  - Remove me -
+                  className="btn btn-danger"
+                  onClick={ () => removeItem(item.objectID)}>
+                    - Remove me -
                 </Button>
               </h4> <hr />
             </div>
